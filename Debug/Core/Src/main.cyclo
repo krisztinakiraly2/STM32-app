@@ -1,0 +1,5 @@
+../Core/Src/main.c:74:5:main	2
+../Core/Src/main.c:133:6:SystemClock_Config	3
+../Core/Src/main.c:175:6:send_message	5
+../Core/Src/main.c:201:6:convert_message	57
+../Core/Src/main.c:279:6:Error_Handler	1
