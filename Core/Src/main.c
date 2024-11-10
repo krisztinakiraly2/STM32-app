@@ -67,7 +67,8 @@ GPIO_PinState led_set = GPIO_PIN_RESET;
 GPIO_PinState led_reset = GPIO_PIN_SET;
 GPIO_PinState is_pushed = GPIO_PIN_RESET;
 
-uint8_t txbuffer[11] = "Welcome\n\r";
+uint8_t txbuffer[12] = "Welcome\n\r";
+#define acm_id 0
 
 #define ENG L"english"
 #define HUN L"hungarian"
@@ -113,15 +114,13 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
   GPIO_PinState button;
   bool started=false;
-  wchar_t* message_hun = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \nárvíztűrő tükörfúrógép \n�?RVÍZTŰR�? TÜKÖRFÚRÓGÉP \n, . - / * + ? ! : \t @\n";
-  wchar_t* message_eng = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \n, . - / * + ? ! : \t @\n";
+  wchar_t* message_hun = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \nárvíztűrő tükörfúrógép \nÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP \n, . - / * + ? ! : \t @\n";
+  //wchar_t* message_eng = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \n, . - / * + ? ! : \t @\n";
   int num = 0x50;
   wchar_t del_str[2];
   del_str[0] = 127;
   del_str[1] = L'\0';
-
   bool test = false;
-  uint8_t rx_data;
 
   HAL_Delay(3000);
 
@@ -131,18 +130,18 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //button = HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin);
+	  button = HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin);
 
-	  /*if (!test)
+	  if (!test)
 	  {
 		  if(button == is_pushed)
 		  {
-			  /*send_message(message_hun,HUN);
-			  send_message(del_str,HUN);
-			  USBD_Delay(500);*/
-/*
-			  send_message(message_eng,ENG);
+			  send_message(message_hun,HUN);
+			  send_message(del_str, HUN);
 			  USBD_Delay(500);
+
+			  //send_message(message_eng,ENG);
+			  //USBD_Delay(500);
 		  }
 	  }
 	  else
@@ -168,15 +167,10 @@ int main(void)
 		  		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_reset);
 		  		  started = !started;
 		  	  }
-	  }*/
+	  }
 
-	  uint8_t result;
-	  USBD_CDC_SetTxBuffer(NUMBER_OF_CDC, &hUsbDevice, txbuffer, 27);
-	  result = USBD_CDC_TransmitPacket(NUMBER_OF_CDC, &hUsbDevice);
-	  if(result == USBD_OK)
-		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_set);
-	  else
-		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_reset);
+	  USBD_CDC_SetTxBuffer(acm_id, &hUsbDevice, txbuffer, sizeof(txbuffer) - 1);
+	  USBD_CDC_TransmitPacket(acm_id, &hUsbDevice);
 	  HAL_Delay(3000);
 
     /* USER CODE END WHILE */
@@ -239,7 +233,8 @@ void send_message(wchar_t* message, wchar_t* lang)
 	int length = wcslen(message);
 	int t[length+1];
 	int is_special[length+1];
-	if(wcscmp(lang,HUN)==1)
+	int res = wcscmp(lang,HUN);
+	if(res == 0)
 		convert_message_hun(message, t, is_special);
 	else
 		convert_message_eng(message, t, is_special);
@@ -328,13 +323,13 @@ int* convert_message_hun(wchar_t* message, int *t, int* is_special)
 			case L'Ü': is_special[i] = 0x20;
 			case L'ü': t[i] = 0x2d; break;
 			case L'Ó': is_special[i] = 0x20;
-			//TODO: �? case L'�?': is_special[i] = 0x20;
+			case L'Ő': is_special[i] = 0x20;
 			case L'ő': t[i] = 0x2f; break;
 			case L'Ú': is_special[i] = 0x20;
 			case L'ú': t[i] = 0x30; break;
 			case L'É': is_special[i] = 0x20;
 			case L'é': t[i] = 0x33; break;
-			//TODO: �? case L'�?': is_special[i] = 0x20;
+			case L'Á': is_special[i] = 0x20;
 			case L'á': t[i] = 0x34; break;
 			case L'Ű': is_special[i] = 0x20;
 			case L'ű': t[i] = 0x31; break;
