@@ -26,10 +26,14 @@
 #include "usb_device.h"
 #include "usbd_hid_keyboard.h"
 #include "usbd_cdc_acm.h"
+#include "usbd_cdc_acm_if.h"
 #include <stdbool.h>
 #include <string.h>
 #include <wchar.h>
 #include <locale.h>
+#include <time.h>
+#include <stdlib.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,9 +60,15 @@ extern USBD_HandleTypeDef hUsbDevice;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void send_message(wchar_t*, wchar_t*);
+void send_hid(wchar_t*, wchar_t*);
 int* convert_message_hun(wchar_t*, int*, int*);
 int* convert_message_eng(wchar_t*, int*, int*);
+void my_init();
+void set_up_encryption();
+void encrypt_and_decrypt_msg(uint8_t *);
+void set_up_connection_with_app();
+uint8_t modExp(uint8_t base, uint8_t exp, uint8_t mod);
+void wait_for_response();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -75,6 +85,19 @@ uint8_t txbuffer[12] = "Welcome\n\r";
 
 uint16_t len = 8;
 uint8_t report[8] = {0};
+
+GPIO_PinState button;
+wchar_t* message_hun;
+wchar_t del_str[2];
+
+uint8_t my_private_key;
+uint8_t my_public_key;
+uint8_t their_public_key;
+uint8_t secret;
+uint8_t pow_base;
+uint8_t mod_base;
+bool res = false;
+
 /* USER CODE END 0 */
 
 /**
@@ -109,20 +132,7 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
-  setlocale(LC_CTYPE, "");
-
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-  GPIO_PinState button;
-  bool started=false;
-  wchar_t* message_hun = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \nárvíztűrő tükörfúrógép \nÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP \n, . - / * + ? ! : \t @\n";
-  //wchar_t* message_eng = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \n, . - / * + ? ! : \t @\n";
-  int num = 0x50;
-  wchar_t del_str[2];
-  del_str[0] = 127;
-  del_str[1] = L'\0';
-  bool test = false;
-
-  HAL_Delay(3000);
+  my_init();
 
   /* USER CODE END 2 */
 
@@ -132,46 +142,25 @@ int main(void)
   {
 	  button = HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin);
 
-	  if (!test)
+	  if(button == is_pushed)
 	  {
-		  if(button == is_pushed)
-		  {
-			  send_message(message_hun,HUN);
-			  send_message(del_str, HUN);
-			  USBD_Delay(500);
-
-			  //send_message(message_eng,ENG);
-			  //USBD_Delay(500);
-		  }
+		  send_hid(message_hun,HUN);
+		  send_hid(del_str, HUN);
 	  }
 	  else
 	  {
-		  if (button == is_pushed && test)
-		  	  {
-		  		  started = !started;
-		  	  }
+		  set_up_encryption();
+		  /*uint8_t mess[] = "hello";
+		  encrypt_and_decrypt_msg(mess);
+		  if(res)
+			  CDC_Transmit(acm_id,mess);
+		  else
+			  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);*/
 
-		  	  if(started)
-		  	  {
-		  		  report[2]=num;
-		  		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_set);
-
-		  		  USBD_HID_Keybaord_SendReport(&hUsbDevice, report, len);
-		  		  USBD_Delay(100);
-		  		  num++;
-
-		  		  report[2]= 0x00;
-		  		  USBD_HID_Keybaord_SendReport(&hUsbDevice, report, len);
-		  		  USBD_Delay(100);
-
-		  		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_reset);
-		  		  started = !started;
-		  	  }
+		  // try receiving data and reprinting with extra so i would know its not the same
 	  }
 
-	  USBD_CDC_SetTxBuffer(acm_id, &hUsbDevice, txbuffer, sizeof(txbuffer) - 1);
-	  USBD_CDC_TransmitPacket(acm_id, &hUsbDevice);
-	  HAL_Delay(3000);
+	  USBD_Delay(500);
 
     /* USER CODE END WHILE */
 
@@ -226,7 +215,266 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void send_message(wchar_t* message, wchar_t* lang)
+void set_up_connection_with_app()
+{
+	// TODO: write this function
+}
+
+void my_init()
+{
+	  setlocale(LC_CTYPE, "");
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+
+	  message_hun = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \nárvíztűrő tükörfúrógép \nÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP \n, . - / * + ? ! : \t @\n";
+	  //wchar_t* message_eng = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ \nabcdefghijklmnopqrstuvwxyz \n0123456789 \n, . - / * + ? ! : \t @\n";
+
+	  del_str[0] = 127;
+	  del_str[1] = L'\0';
+
+	  srand(time(NULL));
+	  //my_private_key = rand() % 13;
+	  my_private_key = 2;
+
+	  srand(time(NULL));
+	  //pow_base = rand() % 5;
+	  pow_base = 2;
+
+	  srand(time(NULL));
+	  //mod_base = rand()%255; // TODO: this needs to be a prime number
+	  mod_base = 17;
+
+	  my_public_key = modExp(pow_base,my_private_key,mod_base);
+
+	  set_up_connection_with_app();
+	  set_up_encryption(); // Some parameter will be needed
+}
+
+void set_up_encryption()
+{
+	uint8_t enter[] = "\n\r\n\r";
+    char num_str[10];
+	HAL_Delay(2000);
+
+	CDC_Transmit(acm_id, (uint8_t*)"Starting setup\n\r", 17);
+	HAL_Delay(200);
+	wait_for_response();
+
+	CDC_Transmit(acm_id, (uint8_t*)"Sending pow base:\n\r", 20);
+	HAL_Delay(100);
+
+    snprintf(num_str, sizeof(num_str), "%d", pow_base);
+    CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
+    HAL_Delay(100);
+    CDC_Transmit(acm_id,enter,5);
+    HAL_Delay(100);
+	wait_for_response();
+
+	CDC_Transmit(acm_id,(uint8_t*)"Sending mod base:\n\r",20);
+	HAL_Delay(100);
+
+	snprintf(num_str, sizeof(num_str), "%d", mod_base);
+	CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
+	HAL_Delay(100);
+	CDC_Transmit(acm_id,enter,5);
+	HAL_Delay(100);
+	wait_for_response();
+
+	CDC_Transmit(acm_id,(uint8_t*)"Sending public key:\n\r",22);
+	HAL_Delay(100);
+
+
+	snprintf(num_str, sizeof(num_str), "%d", my_public_key);
+	CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
+	HAL_Delay(100);
+	CDC_Transmit(acm_id,enter,5);
+	HAL_Delay(100);
+	wait_for_response();
+
+	CDC_Transmit(acm_id,(uint8_t*)"Waiting for public key digit 1:\n\r\r",33);
+	HAL_Delay(100);
+
+	uint8_t buffer1, buffer2;
+	USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &buffer1);
+	while (1)
+	{
+		if (buffer1 >= '0' && buffer1 <= '9')
+		{
+			buffer1 = buffer1 - '0';
+			CDC_Transmit(acm_id,(uint8_t*)"\n\r",3);
+			HAL_Delay(100);
+			break;
+		}
+	}
+
+	CDC_Transmit(acm_id,(uint8_t*)"\n\n\rWaiting for public key digit 2:\n\r\r",36);
+	HAL_Delay(100);
+
+	USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &buffer2);
+	while (1)
+	{
+		USBD_CDC_ReceivePacket(acm_id, &hUsbDevice);
+
+		if (buffer2 >= '0' && buffer2 <= '9')
+		{
+			buffer2 = buffer2 - '0';
+			CDC_Transmit(acm_id,(uint8_t*)"\n\n\n\r",5);
+			HAL_Delay(100);
+			break;
+		}
+	}
+
+	their_public_key = 10*buffer1+buffer2;
+	CDC_Transmit(acm_id,(uint8_t*)"Received public key:\n\r\r",22);
+	HAL_Delay(100);
+	snprintf(num_str, sizeof(num_str), "%d", their_public_key);
+	CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
+	HAL_Delay(100);
+	CDC_Transmit(acm_id,enter,5);
+	HAL_Delay(100);
+	secret = modExp(their_public_key, my_private_key, mod_base);
+
+	CDC_Transmit(acm_id,(uint8_t*)"Sending encrypted message:\n\r",29);
+	HAL_Delay(100);
+	uint8_t m[9] = "Comm set";
+	encrypt_and_decrypt_msg(m);
+	CDC_Transmit(acm_id,m,9);
+	HAL_Delay(100);
+	CDC_Transmit(acm_id,enter,5);
+	HAL_Delay(100);
+	wait_for_response();
+
+	CDC_Transmit(acm_id,(uint8_t*)"Waiting for reply message:\n\r",33);
+	HAL_Delay(100);
+	uint8_t r[9];
+	USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, r);
+	while(1)
+	{
+		USBD_CDC_ReceivePacket(acm_id,&hUsbDevice);
+		HAL_Delay(1000);
+
+		for (int i = 0; i < 9; ++i)
+		{
+			if (r[i] == '\n' || r[i] == '\r')
+			{
+				CDC_Transmit(acm_id, (uint8_t*)"Received message:", 21);
+				HAL_Delay(100);
+
+				CDC_Transmit(acm_id, r, 9);
+				HAL_Delay(100);
+
+				memset(r, 0, sizeof(r));
+
+				break;
+			}
+		}
+	}
+
+	encrypt_and_decrypt_msg(r);
+	int equal=0;
+	for(int i=0; i<10; ++i)
+	{
+		if(m[i]==r[i])
+			++equal;
+	}
+
+	CDC_Transmit(acm_id,(uint8_t*)"Are they equal:\n\r\r",19);
+	HAL_Delay(100);
+	if(equal==9)
+	{
+		res=true;
+		CDC_Transmit(acm_id, (uint8_t*)"Yes\n\n\r", 7);
+	}
+	else
+	{
+		res=false;
+		CDC_Transmit(acm_id, (uint8_t*)"No\n\n\r", 6);
+	}
+
+	HAL_Delay(100);
+
+
+	HAL_Delay(100);
+	CDC_Transmit(acm_id, r, 9);
+	HAL_Delay(100);
+}
+
+void wait_for_response()
+{
+	uint8_t ok;
+	uint8_t res[] = "kK";;
+
+	uint8_t msg[] = "Waiting for response (k)\n\r";
+	CDC_Transmit(acm_id, msg, sizeof(msg) - 1);
+
+	while (1)
+	{
+		// Set RX buffer and attempt to receive data
+		USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &ok);
+		USBD_CDC_ReceivePacket(acm_id, &hUsbDevice);
+
+		// Check if the received message matches "k"
+		if (ok==res[0] || ok==res[1])
+		{
+			HAL_Delay(100);
+			CDC_Transmit(acm_id,(uint8_t*)"\n\r",3);
+			HAL_Delay(100);
+			break;
+		}
+	}
+}
+
+uint8_t modExp(uint8_t base, uint8_t exp, uint8_t mod)
+{
+    uint8_t result = 1; // Initial result is 1
+    base = base % mod;  // In case base is larger than mod
+
+    while (exp > 0)
+    {
+        // If exp is odd, multiply base with result
+        if (exp % 2 == 1)
+        {
+            result = (result * base) % mod;
+        }
+
+        // Now exp must be even
+        exp = exp >> 1; // Divide exp by 2
+        base = (base * base) % mod; // Square the base
+    }
+
+    return result;
+}
+
+void encrypt_and_decrypt_msg(uint8_t* m)
+{
+	size_t len = strlen((char*)m);
+	for (size_t i = 0; i < len; i++)
+	{
+		m[i] ^= secret;
+	}
+}
+
+uint32_t modularPow(uint32_t base, uint32_t exponent, uint32_t mod)
+{
+    uint32_t result = 1;
+    base = base % mod; // Take base modulo mod to avoid unnecessary large numbers
+
+    while (exponent > 0) {
+        // If the exponent is odd, multiply the result by the current base
+        if (exponent % 2 == 1) {
+            result = (result * base) % mod;
+        }
+
+        // Square the base and take modulo
+        base = (base * base) % mod;
+
+        // Halve the exponent (shift right by 1)
+        exponent = exponent >> 1;
+    }
+
+    return result;
+}
+
+void send_hid(wchar_t* message, wchar_t* lang)
 {
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_set);
 
