@@ -72,6 +72,7 @@ void wait_for_response();
 void receive_message(uint8_t* buffer, uint8_t length);
 void save_data(uint8_t* d, uint8_t length);
 void read_data(uint8_t* d, uint8_t length, uint32_t addr);
+int read_command_code(int length);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -102,6 +103,8 @@ uint8_t mod_base;
 bool res = false;
 
 uint32_t address = 0x08020000;
+
+#define SETUPCOMM 0
 /* USER CODE END 0 */
 
 /**
@@ -136,15 +139,15 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
-  //my_init();
+  my_init();
 
-  HAL_FLASH_Unlock();
-  FLASH_Erase_Sector(5, FLASH_VOLTAGE_RANGE_1);
-  HAL_FLASH_Lock();
+  //HAL_FLASH_Unlock();
+  //FLASH_Erase_Sector(5, FLASH_VOLTAGE_RANGE_1);
+  //HAL_FLASH_Lock();
 
-  uint8_t ms[] = "Hihi hihi"; uint8_t d[10];
+  /*uint8_t ms[] = "Hihi hihi"; uint8_t d[10];
   save_data(ms,10);
-  read_data(d,10,0x08020000);
+  read_data(d,10,0x08020000);*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -160,15 +163,20 @@ int main(void)
 	  }
 	  else
 	  {
-		  //set_up_encryption();
-		  /*uint8_t mess[] = "Hello\r\n";
+		  /*
+		  uint8_t mess[] = "Hello\r\n";
 		  encrypt_and_decrypt_msg(mess);
 		  if(res)
 			  CDC_Transmit(acm_id,mess,8);
 		  else
-			  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);*/
+			  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+		  */
 
-
+		  int code = read_command_code(1);
+		  switch(code)
+		  {
+		  	  case SETUPCOMM: set_up_encryption();
+		  }
 	  }
 
 	  USBD_Delay(100);
@@ -226,9 +234,38 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void set_up_connection_with_app()
+
+int read_command_code(int length)
 {
-	// TODO: write this function
+	int l=0;
+	uint8_t buffer[length];
+
+	while(l<length)
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+		USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &buffer[l]);
+		while (1)
+		{
+			USBD_CDC_ReceivePacket(acm_id, &hUsbDevice);
+
+			if (buffer[l] >= '0' && buffer[l] <= '9')
+			{
+				buffer[l] = buffer[l] - '0';
+				break;
+			}
+		}
+		++l;
+	}
+
+	int num=0;
+
+	for(int i=length-1, j=0; i>=0; --i,++j)
+	{
+		num += buffer[j]*pow(10, i);
+	}
+
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	return num;
 }
 
 void save_data(uint8_t* d, uint8_t length)
@@ -268,56 +305,52 @@ void my_init()
 	  pow_base = 2;
 	  mod_base = 17;
 	  my_public_key = modExp(pow_base,my_private_key,mod_base);
-
-	  set_up_connection_with_app();
-	  set_up_encryption(); // Some parameter will be needed
 }
 
 void set_up_encryption()
 {
 	while(!res)
 	{
-		uint8_t enter[] = "\n\r\n\r";
+		//uint8_t enter[] = "\n\r\n\r";
 		char num_str[10];
 		HAL_Delay(2000);
 
-		CDC_Transmit(acm_id, (uint8_t*)"Starting setup\n\r", 17);
-		HAL_Delay(200);
-		wait_for_response();
+		//CDC_Transmit(acm_id, (uint8_t*)"Starting setup\n\r", 17);
+		//HAL_Delay(200);
+		//wait_for_response();
 
-		CDC_Transmit(acm_id, (uint8_t*)"Sending pow base:\n\r", 20);
+		//CDC_Transmit(acm_id, (uint8_t*)"Sending pow base:\n\r", 20);
 		HAL_Delay(100);
 
 		snprintf(num_str, sizeof(num_str), "%d", pow_base);
 		CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
 		HAL_Delay(100);
-		CDC_Transmit(acm_id,enter,5);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,enter,5);
+		//HAL_Delay(100);
 		//wait_for_response();
 
-		CDC_Transmit(acm_id,(uint8_t*)"Sending mod base:\n\r",20);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"Sending mod base:\n\r",20);
+		//HAL_Delay(100);
 
 		snprintf(num_str, sizeof(num_str), "%d", mod_base);
 		CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
 		HAL_Delay(100);
-		CDC_Transmit(acm_id,enter,5);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,enter,5);
+		//HAL_Delay(100);
 		//wait_for_response();
 
-		CDC_Transmit(acm_id,(uint8_t*)"Sending public key:\n\r",22);
-		HAL_Delay(100);
-
+		//CDC_Transmit(acm_id,(uint8_t*)"Sending public key:\n\r",22);
+		//HAL_Delay(100);
 
 		snprintf(num_str, sizeof(num_str), "%d", my_public_key);
 		CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
 		HAL_Delay(100);
-		CDC_Transmit(acm_id,enter,5);
-		HAL_Delay(100);
-		wait_for_response();
+		//CDC_Transmit(acm_id,enter,5);
+		//HAL_Delay(100);
+		//wait_for_response();
 
-		CDC_Transmit(acm_id,(uint8_t*)"Waiting for public key: (xx)\n\r\r",32);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"Waiting for public key: (xx)\n\r\r",32);
+		//HAL_Delay(100);
 		uint8_t buffer[2];
 		int length = 0;
 
@@ -344,45 +377,46 @@ void set_up_encryption()
 
 		their_public_key = buffer[0]*10+buffer[1];
 
-		CDC_Transmit(acm_id,(uint8_t*)"Received public key:\n\r\r",24);
-		HAL_Delay(100);
-		snprintf(num_str, sizeof(num_str), "%d", their_public_key);
-		CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
-		HAL_Delay(100);
-		CDC_Transmit(acm_id,enter,5);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"Received public key:\n\r\r",24);
+		//HAL_Delay(100);
+		//snprintf(num_str, sizeof(num_str), "%d", their_public_key);
+		//CDC_Transmit(acm_id,(uint8_t*)num_str,strlen(num_str));
+		//HAL_Delay(100);
+		//CDC_Transmit(acm_id,enter,5);
+		//HAL_Delay(100);
 		secret = modExp(their_public_key, my_private_key, mod_base);
 
-		CDC_Transmit(acm_id,(uint8_t*)"Sending encrypted message:\n\r",29);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"Sending encrypted message:\n\r",29);
+		//HAL_Delay(100);
 		uint8_t m[9] = "Comm set";
 		encrypt_and_decrypt_msg(m);
 		CDC_Transmit(acm_id,m,9);
 		HAL_Delay(100);
-		CDC_Transmit(acm_id,enter,5);
-		HAL_Delay(100);
-		wait_for_response();
+		//CDC_Transmit(acm_id,enter,5);
+		//HAL_Delay(100);
+		//wait_for_response();
 		encrypt_and_decrypt_msg(m);
 
-		CDC_Transmit(acm_id,(uint8_t*)"Waiting for reply message:\n\r",28);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"Waiting for reply message:\n\r",28);
+		//HAL_Delay(100);
 
 		uint8_t r[9];
-		receive_message(r, 8);
-		r[9]='\0';
+		//receive_message(r, 8);
+		//r[9]='\0';
+		receive_message(r, 9);
 
 		HAL_Delay(100);
-		CDC_Transmit(acm_id,(uint8_t*)"\n\n\rReceived message:\n\r\r",24);
-		HAL_Delay(100);
-		CDC_Transmit(acm_id,r,9);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"\n\n\rReceived message:\n\r\r",24);
+		//HAL_Delay(100);
+		//CDC_Transmit(acm_id,r,9);
+		//HAL_Delay(100);
 
 		encrypt_and_decrypt_msg(r);
 
-		CDC_Transmit(acm_id,(uint8_t*)"\n\r\r",4);
-		HAL_Delay(100);
-		CDC_Transmit(acm_id,r,9);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"\n\r\r",4);
+		//HAL_Delay(100);
+		//CDC_Transmit(acm_id,r,9);
+		//HAL_Delay(100);
 
 		uint8_t om[9] = "Comm set";
 
@@ -393,15 +427,17 @@ void set_up_encryption()
 				res=false;
 		}
 
-		CDC_Transmit(acm_id,(uint8_t*)"\n\n\rAre they equal:\n\r\r",22);
-		HAL_Delay(100);
+		//CDC_Transmit(acm_id,(uint8_t*)"\n\n\rAre they equal:\n\r\r",22);
+		//HAL_Delay(100);
 		if(res)
 		{
-			CDC_Transmit(acm_id, (uint8_t*)"Yes\n\n\r", 7);
+			//CDC_Transmit(acm_id, (uint8_t*)"Yes\n\n\r", 7);
+			CDC_Transmit(acm_id, (uint8_t*)"Yes", 4);
 		}
 		else
 		{
-			CDC_Transmit(acm_id, (uint8_t*)"No\n\n\r", 6);
+			//CDC_Transmit(acm_id, (uint8_t*)"No\n\n\r", 6);
+			CDC_Transmit(acm_id, (uint8_t*)"No", 3);
 		}
 
 		HAL_Delay(100);
