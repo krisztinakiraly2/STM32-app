@@ -1,0 +1,42 @@
+# Build directories
+/build/
+/Debug/
+/Debug/Core/
+/Debug/Drivers/
+/Debug/Middlewares/
+/Release/
+/.obj/
+/.rtt/
+/.swo/
+/.d/
+
+# STM32CubeMX generated files
+/.settings/
+
+# Keil specific
+/*.uvoptx
+/*.uvprojx
+
+# IAR Embedded Workbench specific
+/*.ewp
+/*.ewd
+
+# Compiled object files
+*.o
+*.d
+
+# Archive files
+*.a
+*.lib
+
+# Executable binaries
+*.elf
+*.bin
+*.hex
+
+# Debugging and logging files
+*.log
+*.dump
+
+# STM32CubeIDE specific (useful if you use CubeIDE or Eclipse based IDE)
+/.metadata/

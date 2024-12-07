@@ -1,4 +1,0 @@
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_video_if.c:158:15:VIDEO_Itf_Init	4	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_video_if.c:173:15:VIDEO_Itf_DeInit	4	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_video_if.c:190:15:VIDEO_Itf_Control	16	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_video_if.c:204:15:VIDEO_Itf_Data	24	static

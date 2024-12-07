@@ -1,9 +1,0 @@
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:77:15:Audio_Init	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:87:15:Audio_DeInit	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:96:15:Audio_Record	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:106:15:Audio_VolumeCtl	3
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:125:15:Audio_MuteCtl	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:136:15:Audio_Stop	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:147:15:Audio_Pause	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:158:15:Audio_Resume	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_audio_mic_if.c:169:15:Audio_CommandMgr	1

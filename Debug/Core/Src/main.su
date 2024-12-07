@@ -1,6 +1,0 @@
-../Core/Src/main.c:83:5:main	40	static
-../Core/Src/main.c:193:6:SystemClock_Config	88	static
-../Core/Src/main.c:235:6:send_message	80	dynamic
-../Core/Src/main.c:264:6:convert_message_hun	32	static
-../Core/Src/main.c:381:6:convert_message_eng	32	static
-../Core/Src/main.c:486:6:Error_Handler	4	static,ignoring_inline_asm

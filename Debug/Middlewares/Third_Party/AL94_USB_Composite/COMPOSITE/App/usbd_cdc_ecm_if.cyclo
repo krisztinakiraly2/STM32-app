@@ -1,6 +1,0 @@
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_cdc_ecm_if.c:74:15:CDC_ECM_Itf_Init	2
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_cdc_ecm_if.c:98:15:CDC_ECM_Itf_DeInit	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_cdc_ecm_if.c:116:15:CDC_ECM_Itf_Control	8
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_cdc_ecm_if.c:186:15:CDC_ECM_Itf_Receive	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_cdc_ecm_if.c:212:15:CDC_ECM_Itf_TransmitCplt	1
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_cdc_ecm_if.c:228:15:CDC_ECM_Itf_Process	2

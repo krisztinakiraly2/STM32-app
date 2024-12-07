@@ -1,5 +1,0 @@
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_printer_if.c:93:15:PRINTER_Init	4	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_printer_if.c:107:15:PRINTER_DeInit	4	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_printer_if.c:131:15:PRINTER_Receive	16	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_printer_if.c:147:15:PRINTER_Control_req	32	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_printer_if.c:193:6:PRINTER_PageEndManager	16	static

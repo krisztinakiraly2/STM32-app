@@ -261,7 +261,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
 
 /*  HID keyboard report descriptor */
 __ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[HID_KEYBOARD_REPORT_DESC_SIZE] __ALIGN_END =
-    {
+{
 		0x05, 0x01, // USAGE_PAGE (Generic Desktop)
 		0x09, 0x06, // USAGE (Keyboard)
 		0xa1, 0x01, // COLLECTION (Application)
@@ -294,7 +294,7 @@ __ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[HID_KEYBOARD_REPORT_DESC_SI
 		0x29, 0x65, // USAGE_MAXIMUM (Keyboard Application)
 		0x81, 0x00, // INPUT (Data,Ary,Abs)
 		0xc0 /* END_COLLECTION */
-    };
+};
 
 /**
   * @}

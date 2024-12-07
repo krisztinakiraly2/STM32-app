@@ -1,6 +1,0 @@
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_dfu_if.c:157:10:MEM_If_Init	4	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_dfu_if.c:168:10:MEM_If_DeInit	4	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_dfu_if.c:180:10:MEM_If_Erase	16	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_dfu_if.c:194:10:MEM_If_Write	24	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_dfu_if.c:208:10:MEM_If_Read	24	static
-../Middlewares/Third_Party/AL94_USB_Composite/COMPOSITE/App/usbd_dfu_if.c:223:10:MEM_If_GetStatus	24	static

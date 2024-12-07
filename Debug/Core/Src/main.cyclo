@@ -1,6 +1,0 @@
-../Core/Src/main.c:83:5:main	2
-../Core/Src/main.c:193:6:SystemClock_Config	3
-../Core/Src/main.c:235:6:send_message	5
-../Core/Src/main.c:264:6:convert_message_hun	93
-../Core/Src/main.c:381:6:convert_message_eng	78
-../Core/Src/main.c:486:6:Error_Handler	1
