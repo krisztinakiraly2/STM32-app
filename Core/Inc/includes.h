@@ -33,6 +33,13 @@
 #define HUN L"hungarian"
 #define NUM_GENERATORS 3
 
-#define SETUPCOMM 0
+#define SET_UP_COMM 1
+#define SET_KEY_BOARD_LANG 2
+
+#define WAIT_FOR_REPLY 0
+#define READ_PUBLIC_KEY 1
+#define READ_REPLY_MESSAGE 3
+#define READ_COMMAND 4
+#define LOGIN_REQ 6
 
 #endif /* INC_INCLUDES_H_ */

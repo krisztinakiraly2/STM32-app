@@ -93,6 +93,7 @@ void MX_RTC_Init(void)
 	  Error_Handler();
   }
   /* USER CODE END RTC_Init 2 */
+
 }
 
 void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)

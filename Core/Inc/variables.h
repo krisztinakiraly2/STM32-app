@@ -8,8 +8,6 @@ GPIO_PinState led_set = GPIO_PIN_RESET;
 GPIO_PinState led_reset = GPIO_PIN_SET;
 GPIO_PinState is_pushed = GPIO_PIN_RESET;
 
-uint8_t txbuffer[12] = "Welcome\n\r";
-
 uint16_t len = 8;
 uint8_t report[8] = {0};
 
@@ -35,4 +33,10 @@ nonce96_t nonce =
 	0x00, 0x00, 0x00, 0x00,
 };
 
-uint32_t address = 0x08020000;
+uint32_t address = 0x08012500;
+bool data_recieved = false;
+bool setting_up_encryption = false;
+int step = 4;
+uint8_t ok;
+
+wchar_t* lang;

@@ -5,10 +5,17 @@ extern GPIO_PinState led_set;
 extern GPIO_PinState led_reset;
 extern uint16_t len;
 extern uint8_t report[8];
+extern bool setting_up_encryption;
+extern bool data_recieved;
+extern int step;
+extern uint8_t recieved[9];
+extern uint8_t their_public_key[64];
+extern uint8_t ok;
+extern wchar_t* lang;
 
-int* convert_message_hun(wchar_t* message, int *t, int* is_special)
+int* convert_message_hun(wchar_t* message, int *t, int* is_special, int length)
 {
-	int length = wcslen(message);
+	//int length = wcslen(message);
 
 	for(int i=0; i<length; ++i)
 	{
@@ -123,9 +130,9 @@ int* convert_message_hun(wchar_t* message, int *t, int* is_special)
 	return t;
 }
 
-int* convert_message_eng(wchar_t* message, int *t, int* is_special)
+int* convert_message_eng(wchar_t* message, int *t, int* is_special, int length)
 {
-	int length = wcslen(message);
+	//int length = wcslen(message);
 
 	for(int i=0; i<length; ++i)
 	{
@@ -223,18 +230,25 @@ int* convert_message_eng(wchar_t* message, int *t, int* is_special)
 	return t;
 }
 
-void send_hid(wchar_t* message, wchar_t* lang)
+void send_hid(wchar_t* message, int length)
 {
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_set);
 
-	int length = wcslen(message);
+	//int length = wcslen(message);
 	int t[length+1];
 	int is_special[length+1];
-	int res = wcscmp(lang,HUN);
-	if(res == 0)
-		convert_message_hun(message, t, is_special);
+	wchar_t* language;
+
+	if(lang == NULL)
+		language = HUN;
 	else
-		convert_message_eng(message, t, is_special);
+		language = lang;
+
+	int res = wcscmp(language,HUN);
+	if(res == 0)
+		convert_message_hun(message, t, is_special, length);
+	else
+		convert_message_eng(message, t, is_special, length);
 	for(int i=0; i<length+1;++i)
 	{
 		if(i!=0 && t[i-1]=='\n')
@@ -253,48 +267,18 @@ void send_hid(wchar_t* message, wchar_t* lang)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_reset);
 }
 
-void receive_message(uint8_t* buffer, uint8_t length)
-{
-	if(length < 1)
-		return;
-
-	//uint8_t l=0;
-
-	//while(l<length)
-	//{
-		USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &buffer[0]);
-		USBD_CDC_ReceivePacket(acm_id, &hUsbDevice);
-		while (1)
-		{
-			//uint32_t a = CDC_ACM_Class_Data[0].RxLength;
-
-			/*if(buffer[l] >= '!' && buffer[l] <= '~')
-			{
-				break;
-			}*/
-		}
-		//USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[NUMBER_OF_CDC];++l;
-	//}
-}
-
 void wait_for_response()
 {
-	uint8_t ok;
-	uint8_t res[] = "kK";;
-
+	ok ='\0';
+	int8_t res[] = "kK";
 	uint8_t msg[] = "Waiting for response (k)\n\r";
 	CDC_Transmit(acm_id, msg, sizeof(msg) - 1);
 
 	while (1)
 	{
-		// Set RX buffer and attempt to receive data
-		USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &ok);
-		USBD_CDC_ReceivePacket(acm_id, &hUsbDevice);
-
 		// Check if the received message matches "k"
 		if (ok==res[0] || ok==res[1])
 		{
-			HAL_Delay(100);
 			CDC_Transmit(acm_id,(uint8_t*)"\n\r",3);
 			HAL_Delay(100);
 			break;
@@ -302,36 +286,7 @@ void wait_for_response()
 	}
 }
 
-// TODO: figure out how does the reading work and rewrite this
-int read_command_code(int length)
+void set_keyboard_language(wchar_t* language)
 {
-	int l=0;
-	uint8_t buffer[length];
-
-	while(l<length)
-	{
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-		USBD_CDC_SetRxBuffer(acm_id, &hUsbDevice, &buffer[l]);
-		while (1)
-		{
-			USBD_CDC_ReceivePacket(acm_id, &hUsbDevice);
-
-			if (buffer[l] >= '0' && buffer[l] <= '9')
-			{
-				buffer[l] = buffer[l] - '0';
-				break;
-			}
-		}
-		++l;
-	}
-
-	int num=0;
-
-	for(int i=length-1, j=0; i>=0; --i,++j)
-	{
-		num += buffer[j]*pow(10, i);
-	}
-
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-	return num;
+	lang = language;
 }

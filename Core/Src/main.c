@@ -61,32 +61,20 @@ void my_init();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/*GPIO_PinState led_set = GPIO_PIN_RESET;
-GPIO_PinState led_reset = GPIO_PIN_SET;
-GPIO_PinState is_pushed = GPIO_PIN_RESET;
-
-uint8_t txbuffer[12] = "Welcome\n\r";
-#define acm_id 0
-
-#define ENG L"english"
-#define HUN L"hungarian"
-
-uint16_t len = 8;
-uint8_t report[8] = {0};
-
-GPIO_PinState button;
-wchar_t* message_hun;
-wchar_t del_str[2];
-
-uint8_t my_private_key;
-uint8_t my_public_key;
-uint8_t their_public_key;
-uint8_t secret;
-uint8_t pow_base;
-uint8_t mod_base;
-bool res = false;
-
-uint32_t address = 0x08020000;*/
+bool send = false;
+volatile uint8_t mybuffer[3];
+volatile uint8_t data[9];
+int pos=0;
+int num=0;
+volatile uint8_t their_public_key_test[3];
+extern int public_key_length;
+extern bool data_recieved;
+extern uint8_t ok;
+wchar_t* email_or_username;
+wchar_t* password;
+bool nothing_to_send=false;
+int email_or_username_len=0;
+int password_len=0;
 /* USER CODE END 0 */
 
 /**
@@ -118,11 +106,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_RTC_Init();
+  MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
   my_init();
+  uint8_t command[] = "Login req\n";
+  wchar_t* tab = L"\t";
+
+  //test_flash();
 
   /* USER CODE END 2 */
 
@@ -134,19 +126,59 @@ int main(void)
 
 	  if(button == is_pushed)
 	  {
-		  send_hid(message_hun,HUN);
-		  send_hid(del_str, HUN);
+		  //send_hid(message_hun,HUN);
+		  //send_hid(del_str, HUN);
+		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_set);
+		  encrypt_and_decrypt_msg(command,11);
+		  command[10] = '\n';
+		  step=LOGIN_REQ;
+		  nothing_to_send=false;
+
+		  while(!data_recieved)
+		  {
+			  CDC_Transmit(acm_id, command, 11);
+			  HAL_Delay(2000);
+		  }
+
+		  if(!nothing_to_send)
+		  {
+			  send_hid(email_or_username, email_or_username_len);
+			  USBD_Delay(100);
+			  send_hid(tab,1);
+			  USBD_Delay(100);
+			  send_hid(password,password_len);
+
+			  free(email_or_username);
+			  free(password);
+		  }
+
+		  step=READ_COMMAND;
+		  data_recieved = false;
+		  nothing_to_send=false;
+		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_reset);
+
 	  }
 	  else
 	  {
-		  int code = read_command_code(1);
-		  switch(code)
+		  if(data_recieved)
 		  {
-			  case SETUPCOMM: set_up_encryption();
+			  data_recieved = false;
+			  switch(mybuffer[0])
+			  {
+				  case SET_UP_COMM: set_up_encryption(); break;
+
+				  case SET_KEY_BOARD_LANG:
+					  if(mybuffer[1] == 'e')
+						  set_keyboard_language(ENG);
+					  else
+						  if(mybuffer[1] == 'h')
+							  set_keyboard_language(HUN);
+					  break;
+			  }
 		  }
 	  }
 
-	  USBD_Delay(100);
+	  USBD_Delay(10);
 
     /* USER CODE END WHILE */
 
@@ -212,6 +244,118 @@ void my_init()
 
 	  del_str[0] = 127;
 	  del_str[1] = L'\0';
+}
+
+void USB_CDC_RxHandler(uint8_t* Buf, uint32_t Len)
+{
+	switch(step)
+	{
+		case WAIT_FOR_REPLY:
+			ok = Buf[0];
+
+		case READ_PUBLIC_KEY:
+			/*if(pos<public_key_length) //public_key_length
+			{
+				their_public_key[pos++] = Buf[0];
+
+				if(pos>public_key_length-1)
+				{
+					data_recieved = true;
+					++step;
+				}
+
+			} break;*/
+
+			if(Len==64)
+			{
+				for(int i=0; i<Len; ++i)
+				{
+					their_public_key[i] = Buf[i];
+				}
+
+				data_recieved = true;
+				pos=0;
+				++step;
+			} break;
+
+		case READ_REPLY_MESSAGE:
+			/*if(pos<7)
+			{
+				data[pos] = Buf[0];
+				++pos;
+			}
+			else
+			{
+				data_recieved = true;
+				pos=0;
+			} break;*/
+
+			if(Len==8)
+			{
+				for(int i=0; i<Len; ++i)
+				{
+					data[i] = Buf[i];
+				}
+
+				data_recieved = true;
+				pos=0;
+			} break;
+
+		case READ_COMMAND:
+			if(Buf[0]>='0' || Buf[0]<='9')
+			{
+				mybuffer[0] = Buf[0]-'0';
+
+				if(mybuffer[0]==SET_KEY_BOARD_LANG)
+				{
+					mybuffer[1] = Buf[2];
+				}
+
+				data_recieved = true;
+				pos=0;
+			} break;
+		case LOGIN_REQ:
+			switch(pos)
+			{
+				case 0:
+					if(Len==1)
+					{
+						nothing_to_send=true;
+						data_recieved = true;
+						break;
+					}
+					else
+					{
+						uint8_t buffer[Len];
+						for(int i=0; i<Len; ++i)
+							buffer[i] = (wchar_t)Buf[i];
+						encrypt_and_decrypt_msg(buffer, Len);
+						email_or_username_len = Len;
+						email_or_username = (wchar_t*) malloc(Len*sizeof(wchar_t));
+						for (int i = 0; i < Len; ++i)
+						{
+							email_or_username[i] = (wchar_t)buffer[i];
+						}
+					}
+					++pos;
+					break;
+
+				case 1:
+					uint8_t buffer[Len];
+					for(int i=0; i<Len; ++i)
+						buffer[i] = Buf[i];
+					encrypt_and_decrypt_msg(buffer, Len);
+					password_len = Len;
+					password  = (wchar_t*) malloc(Len*sizeof(wchar_t));
+					for (int i = 0; i < Len; ++i)
+					{
+						password[i] = (wchar_t)buffer[i];
+					}
+					data_recieved = true;
+					break;
+			}
+
+	}
 }
 
 /* USER CODE END 4 */
