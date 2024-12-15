@@ -111,10 +111,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
   my_init();
-  uint8_t command[] = "Login req\n";
-  wchar_t* tab = L"\t";
-
-  //test_flash();
 
   /* USER CODE END 2 */
 
@@ -126,8 +122,6 @@ int main(void)
 
 	  if(button == is_pushed)
 	  {
-		  //send_hid(message_hun,HUN);
-		  //send_hid(del_str, HUN);
 		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, led_set);
 		  encrypt_and_decrypt_msg(command,11);
 		  command[10] = '\n';
@@ -254,18 +248,6 @@ void USB_CDC_RxHandler(uint8_t* Buf, uint32_t Len)
 			ok = Buf[0];
 
 		case READ_PUBLIC_KEY:
-			/*if(pos<public_key_length) //public_key_length
-			{
-				their_public_key[pos++] = Buf[0];
-
-				if(pos>public_key_length-1)
-				{
-					data_recieved = true;
-					++step;
-				}
-
-			} break;*/
-
 			if(Len==64)
 			{
 				for(int i=0; i<Len; ++i)
@@ -279,17 +261,6 @@ void USB_CDC_RxHandler(uint8_t* Buf, uint32_t Len)
 			} break;
 
 		case READ_REPLY_MESSAGE:
-			/*if(pos<7)
-			{
-				data[pos] = Buf[0];
-				++pos;
-			}
-			else
-			{
-				data_recieved = true;
-				pos=0;
-			} break;*/
-
 			if(Len==8)
 			{
 				for(int i=0; i<Len; ++i)

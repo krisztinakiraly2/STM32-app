@@ -40,3 +40,5 @@ int step = 4;
 uint8_t ok;
 
 wchar_t* lang;
+uint8_t command[] = "Login req\n";
+wchar_t* tab = L"\t";

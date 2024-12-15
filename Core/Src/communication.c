@@ -13,7 +13,7 @@ extern uint8_t their_public_key[64];
 extern uint8_t ok;
 extern wchar_t* lang;
 
-int* convert_message_hun(wchar_t* message, int *t, int* is_special, int length)
+void convert_message_hun(wchar_t* message, int *t, int* is_special, int length)
 {
 	//int length = wcslen(message);
 
@@ -126,11 +126,9 @@ int* convert_message_hun(wchar_t* message, int *t, int* is_special, int length)
 
 	t[length] = 0x00;
 	is_special[length]= 0x00;
-
-	return t;
 }
 
-int* convert_message_eng(wchar_t* message, int *t, int* is_special, int length)
+void convert_message_eng(wchar_t* message, int *t, int* is_special, int length)
 {
 	//int length = wcslen(message);
 
@@ -226,8 +224,6 @@ int* convert_message_eng(wchar_t* message, int *t, int* is_special, int length)
 
 	t[length] = 0x00;
 	is_special[length]= 0x00;
-
-	return t;
 }
 
 void send_hid(wchar_t* message, int length)

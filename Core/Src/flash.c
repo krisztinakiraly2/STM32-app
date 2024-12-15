@@ -67,24 +67,5 @@ void test_flash()
 
 void save_profile()
 {
-	//name: Krisztina
-	//email: krisztinakiraly2@gmail.com
-	//username: krisztina
-	//password: 123
 
-	/*uint8_t* id;
-	uint8_t* name;
-	uint8_t* email;
-	uint8_t* username;
-	uint8_t* password;
-
-	uint8_t pid[] = "id: ";
-	uint8_t pname[] = "name: ";
-	uint8_t pemail[] = "email: ";
-	uint8_t pusername[] = "username: ";
-	uint8_t ppassword[] = "password: ";
-
-	save_data(pid,4);
-	save_data(*id,strlen(id));
-	*/
 }
